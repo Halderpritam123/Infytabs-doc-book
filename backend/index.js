@@ -1,10 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { connection } = require('./config/db');
-const userRoutes = require('./routes/userRoutes');
-const doctorRoutes = require('./routes/doctorRoutes');
-const doctorAppointmentRoutes = require('./routes/doctorAppointmentRoutes');
-const patientAppointmentRoutes = require('./routes/patientAppointmentRoutes');
+const authRoutes = require('./routes/authRoutes');
 const app = express();
 
 // Middleware
@@ -12,10 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-app.use('/users', userRoutes);
-app.use('/doctor',doctorRoutes);
-app.use('/doctorAppointment',doctorAppointmentRoutes);
-app.use('/patientAppointment',patientAppointmentRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get("/",(req,res)=>{
     res.send("home page")
