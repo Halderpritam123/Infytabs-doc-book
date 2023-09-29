@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
       expiresIn: '1h',
     });
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, isDoctor: user.isDoctor }); // Include isDoctor value in the response
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
