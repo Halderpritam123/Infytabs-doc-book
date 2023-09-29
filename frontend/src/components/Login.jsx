@@ -49,6 +49,7 @@ const Login = () => {
         } else {
           history('/patient-dashboard');
         }
+        window.location.reload();
       }
     } catch (error) {
       // Handle login errors
