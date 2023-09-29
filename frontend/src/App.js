@@ -9,6 +9,7 @@ import PrivetRouterPai from './components/PrivetRouterPai';
 import Navbar from './components/Navbar';
 import Booking from './components/Booking';
 import Home from './components/Home';
+import Footer from './components/Footer';
 function App() {
   const isAuthenticated=sessionStorage.getItem('token');
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/patient-dashboard" element={<PrivetRouterPai><PatientDashboard/></PrivetRouterPai>} />
           <Route path="/booking" element={<PrivetRouterPai><Booking/></PrivetRouterPai>} />
       </Routes>
+      <Footer/>
       </div>
   );
 }
