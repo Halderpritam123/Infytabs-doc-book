@@ -2,7 +2,6 @@
 
 Deployed link:https://infytabstm.netlify.app/
 
-Creating comprehensive documentation for your project is crucial for clarity and future reference. Below is an outline of what your documentation might include. You can expand on each section with detailed explanations, code snippets, and diagrams as needed.
 
 # Doctor-Patient Appointment Booking Web Application Documentation
 
@@ -235,4 +234,3 @@ Creating comprehensive documentation for your project is crucial for clarity and
 
 ---
 
-Remember to include code snippets, configuration files, and any additional diagrams or visual aids as needed to make your documentation clear and informative. This documentation will serve as a valuable resource for both developers and stakeholders involved in the project.
