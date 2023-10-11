@@ -11,6 +11,7 @@ import {
   Button,
   Center,
   Spinner,
+  useToast,
   Alert,
   AlertIcon,
   AlertTitle,
@@ -30,16 +31,17 @@ import {
   Heading,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
+import { formatDateTime } from './DoctorDashboard';
 
-const apiUrl = 'http://localhost:8080/api/available-slots';
+const apiUrl = 'https://infytabs.onrender.com/api/available-slots';
 
 const PatientDashboard = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [slots, setSlots] = useState([]);
   const [isCheckBookingsVisible, setIsCheckBookingsVisible] = useState(true);
-const [delId,setdelId]=useState("")
+  const [delId, setDelId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
@@ -52,6 +54,8 @@ const [delId,setdelId]=useState("")
     patientAge: '',
   });
 
+  const toast = useToast(); // Import useToast
+
   const bookSlot = async (slotId) => {
     setIsLoading(true);
     setMessage('');
@@ -62,7 +66,7 @@ const [delId,setdelId]=useState("")
         {},
         {
           headers: {
-            Authorization: `Bearer <your-jwt-token>`, // Replace with your JWT token
+            Authorization: sessionStorage.getItem('token') // Replace with your JWT token
           },
         }
       );
@@ -85,7 +89,7 @@ const [delId,setdelId]=useState("")
   };
 
   const openModal = (slot) => {
-    setdelId(slot._id)
+    setDelId(slot._id);
     setFormData({
       date: slot.date,
       doctorFullName: slot.doctorFullName,
@@ -103,13 +107,39 @@ const [delId,setdelId]=useState("")
     setIsModalOpen(false);
   };
 
+  // Validation function to check if required fields are filled
+  const validateForm = () => {
+    if (
+      !formData.patientName ||
+      !formData.patientEmail ||
+      !formData.patientGender ||
+      !formData.patientAge
+    ) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required patient information fields.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    return true;
+  };
+
   const saveForm = async () => {
     setIsLoading(true);
     setMessage('');
-  
+
+    // Check if the form is valid before submitting
+    if (!validateForm()) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const bookedDataResponse = await axios.post(
-        'http://localhost:8080/api/booked-data',
+        'https://infytabs.onrender.com/api/booked-data',
         {
           date: formData.date,
           doctorFullName: formData.doctorFullName,
@@ -122,29 +152,30 @@ const [delId,setdelId]=useState("")
         },
         {
           headers: {
-            Authorization: `Bearer <your-jwt-token>`, // Replace with your JWT token
+            Authorization: sessionStorage.getItem('token') // Replace with your JWT token
           },
         }
       );
-        // Successfully booked the slot, now update the availability
-        const patchResponse = await axios.patch(
-          `${apiUrl}/${delId}`, // Replace with the correct slotId
-          { availableStatus: false }, // Update availableStatus to false
-          {
-            headers: {
-              Authorization: `Bearer <your-jwt-token>`, // Replace with your JWT token
-            },
-          }
-        );
-          setMessage('Slot booked successfully');
-          fetchSlots()
+
+      // Successfully booked the slot, now update the availability
+      const patchResponse = await axios.patch(
+        `${apiUrl}/${delId}`, // Replace with the correct slotId
+        { availableStatus: false }, // Update availableStatus to false
+        {
+          headers: {
+            Authorization: sessionStorage.getItem('token') // Replace with your JWT token
+          },
+        }
+      );
+      setMessage('Slot booked successfully');
+      fetchSlots();
+      closeModal();
     } catch (error) {
       setMessage('Error booking slot');
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   const fetchSlots = async () => {
     try {
@@ -187,7 +218,7 @@ const [delId,setdelId]=useState("")
             <Tbody>
               {slots.map((slot) => (
                 <Tr key={slot._id}>
-                  <Td>{slot.date}</Td>
+                  <Td>{formatDateTime(slot.date)}</Td>
                   <Td>{slot.doctorFullName}</Td>
                   <Td>{slot.doctorEmail}</Td>
                   <Td>{slot.doctorGender}</Td>
@@ -225,9 +256,10 @@ const [delId,setdelId]=useState("")
           _hover={{ bg: 'teal.600' }}
           onClick={() => {
             // Handle the "Check Bookings" button click event
+            navigate("/booking");
           }}
         >
-          <Text color="white" fontWeight="bold" onClick={()=>{navigate("/booking")}}>
+          <Text color="white" fontWeight="bold">
             Check Bookings
           </Text>
         </Flex>
@@ -242,7 +274,7 @@ const [delId,setdelId]=useState("")
           <ModalBody>
             <FormControl mb={4}>
               <FormLabel>Date</FormLabel>
-              <Input type="text" value={formData.date} isReadOnly />
+              <Input type="text" value={formatDateTime(formData.date)} isReadOnly />
             </FormControl>
             <FormControl mb={4}>
               <FormLabel>Doctor Full Name</FormLabel>

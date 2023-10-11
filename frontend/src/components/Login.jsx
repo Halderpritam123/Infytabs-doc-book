@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, FormControl, FormLabel, Input, Spinner, useToast } from '@chakra-ui/react';
 import axios from 'axios';
-
+import {GoogleLogin} from 'react-google-login'
 const Login = () => {
   const history = useNavigate();
   const toast = useToast(); // Initialize the useToast hook
@@ -17,14 +17,19 @@ const Login = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
+  const responseGoogle=(response)=>{
+    console.log(response)
+  }
+  const responseError=(error)=>{
+    console.log(error)
+  }
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); // Start loading
 
     try {
       // Send a POST request to your login endpoint with Axios
-      const response = await axios.post('http://localhost:8080/api/auth/login', formData);
+      const response = await axios.post('https://infytabs.onrender.com/api/auth/login', formData);
 
       if (response.status === 200) {
         // Login successful

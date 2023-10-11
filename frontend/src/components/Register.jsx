@@ -35,7 +35,7 @@ const Register = () => {
 
     try {
       // Send a POST request to your registration endpoint with Axios
-      const response = await axios.post('http://localhost:8080/api/auth/register', formData);
+      const response = await axios.post('https://infytabs.onrender.com/api/auth/register', formData);
 
       if (response.status === 201) {
         // Registration successful

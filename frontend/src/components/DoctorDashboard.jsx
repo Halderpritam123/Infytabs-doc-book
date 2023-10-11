@@ -19,19 +19,24 @@ import {
   AlertIcon,
   AlertTitle,
   CloseButton,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useToast, // Import useToast from Chakra UI
 } from '@chakra-ui/react';
-import { FaEdit, FaTrash } from 'react-icons/fa'; // Import edit and delete icons
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 const addSlotToCalendar = async (formData) => {
   try {
-    // Replace with your backend API endpoint
-    const apiUrl = 'http://localhost:8080/api/available-slots';
+    const apiUrl = 'https://infytabs.onrender.com/api/available-slots';
 
-    // Make a POST request to add a new slot
     const response = await axios.post(apiUrl, formData, {
       headers: {
-        // Include any necessary headers, such as authentication headers
-        Authorization: `Bearer <your-jwt-token>`, // Replace with your JWT token
+        Authorization:sessionStorage.getItem('token'),
         'Content-Type': 'application/json',
       },
     });
@@ -41,6 +46,18 @@ const addSlotToCalendar = async (formData) => {
     throw error;
   }
 };
+ export function formatDateTime(inputString) {
+  const dateObj = new Date(inputString);
+  const year = dateObj.getFullYear();
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Add 1 because months are 0-indexed
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const hours = dateObj.getHours().toString().padStart(2, '0');
+  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+  const ampm = dateObj.getHours() < 12 ? 'am' : 'pm';
+
+  const formattedString = `${year}-${month}-${day}, ${hours}:${minutes} ${ampm}`;
+  return formattedString;
+}
 
 const DoctorDashboard = () => {
   const [formData, setFormData] = useState({
@@ -52,6 +69,17 @@ const DoctorDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [slots, setSlots] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedData, setEditedData] = useState({
+    date: '',
+    doctorFullName: '',
+    doctorEmail: '',
+    doctorGender: '',
+    availableStatus: false,
+  });
+
+  // Toast configuration
+  const toast = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,13 +90,24 @@ const DoctorDashboard = () => {
     setIsLoading(true);
     setMessage('');
 
+    // Check for required fields
+    if (!formData.date || !formData.doctorFullName || !formData.doctorEmail || !formData.doctorGender) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all required fields.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Make a POST request to add a new slot
       const response = await addSlotToCalendar(formData);
 
       if (response.status === 201) {
         setMessage('Slot added successfully');
-        // Refresh the list of slots after adding
         await fetchSlots();
       } else {
         setMessage('Failed to add slot');
@@ -82,18 +121,15 @@ const DoctorDashboard = () => {
 
   const handleDeleteSlot = async (slotId) => {
     try {
-      const apiUrl = `http://localhost:8080/api/available-slots/${slotId}`;
+      const apiUrl = `https://infytabs.onrender.com/api/available-slots/${slotId}`;
 
-      // Make a DELETE request to delete the slot
       const response = await axios.delete(apiUrl, {
         headers: {
-          // Include any necessary headers, such as authentication headers
-          Authorization: `Bearer <your-jwt-token>`, // Replace with your JWT token
+          Authorization: sessionStorage.getItem('token')
         },
       });
       setMessage('Slot deleted successfully');
 
-      // Remove the deleted slot from the state
       setSlots(slots.filter((slot) => slot._id !== slotId));
       await fetchSlots();
     } catch (error) {
@@ -103,15 +139,54 @@ const DoctorDashboard = () => {
 
   const fetchSlots = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/available-slots');
+      const response = await axios.get('https://infytabs.onrender.com/api/available-slots');
       setSlots(response.data);
     } catch (error) {
       console.error('Error fetching slots:', error);
     }
   };
 
+  const handleOpenEditModal = (slot) => {
+    setEditedData(slot);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditedData({ ...editedData, [name]: value });
+  };
+
+  const handleSaveEditedData = async () => {
+    setIsLoading(true);
+    setMessage('');
+
+    try {
+      const response = await axios.patch(`https://infytabs.onrender.com/api/available-slots/${editedData._id}`, editedData, {
+        headers: {
+          Authorization: sessionStorage.getItem('token'),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200) {
+        setMessage('Slot updated successfully');
+        setIsEditModalOpen(false);
+        await fetchSlots();
+      } else {
+        setMessage('Failed to update slot');
+      }
+    } catch (error) {
+      setMessage('Error updating slot');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch available slots when the component mounts
     fetchSlots();
   }, []);
 
@@ -122,7 +197,7 @@ const DoctorDashboard = () => {
           <FormControl>
             <FormLabel>Date</FormLabel>
             <Input
-              type="date"
+              type="datetime-local"
               name="date"
               value={formData.date}
               onChange={handleChange}
@@ -193,20 +268,20 @@ const DoctorDashboard = () => {
               <Th>Doctor Email</Th>
               <Th>Gender</Th>
               <Th>Availability</Th>
-              <Th>Actions</Th> {/* Add a column for actions */}
+              <Th>Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
             {slots.map((slot) => (
               <Tr key={slot._id}>
-                <Td>{slot.date}</Td>
+                <Td>{formatDateTime(slot.date)}</Td>
                 <Td>{slot.doctorFullName}</Td>
                 <Td>{slot.doctorEmail}</Td>
                 <Td>{slot.doctorGender}</Td>
-                <Td>{slot.availableStatus ? 'Available' : 'Not Available'}</Td> {/* Updated line */}
+                <Td>{slot.availableStatus ? 'Available' : 'Not Available'}</Td>
                 <Td>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <FaEdit style={{ cursor: 'pointer', marginRight: '8px' }} />
+                    <FaEdit style={{ cursor: 'pointer', marginRight: '8px' }} onClick={() => handleOpenEditModal(slot)} />
                     <FaTrash style={{ cursor: 'pointer' }} onClick={() => handleDeleteSlot(slot._id)} />
                   </div>
                 </Td>
@@ -214,11 +289,82 @@ const DoctorDashboard = () => {
             ))}
           </Tbody>
         </Table>
+
+        {/* Edit Modal */}
+        <Modal isOpen={isEditModalOpen} onClose={handleCloseEditModal}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Edit Slot</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <FormControl>
+                <FormLabel>Date</FormLabel>
+                <Input
+                  type="datetime-local"
+                  name="date"
+                  value={editedData.date}
+                  onChange={handleEditFormChange}
+                  required
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Doctor Full Name</FormLabel>
+                <Input
+                  type="text"
+                  name="doctorFullName"
+                  value={editedData.doctorFullName}
+                  onChange={handleEditFormChange}
+                  required
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Doctor Email</FormLabel>
+                <Input
+                  type="email"
+                  name="doctorEmail"
+                  value={editedData.doctorEmail}
+                  onChange={handleEditFormChange}
+                  required
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Doctor Gender</FormLabel>
+                <Select
+                  name="doctorGender"
+                  value={editedData.doctorGender}
+                  onChange={handleEditFormChange}
+                  required
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </Select>
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Availability</FormLabel>
+                <Select
+                  name="availableStatus"
+                  value={editedData.availableStatus}
+                  onChange={handleEditFormChange}
+                  required
+                >
+                  <option value={true}>Available</option>
+                  <option value={false}>Not Available</option>
+                </Select>
+              </FormControl>
+            </ModalBody>
+            <ModalFooter>
+              <Button colorScheme="blue" mr={3} onClick={handleSaveEditedData}>
+                Save
+              </Button>
+              <Button onClick={handleCloseEditModal}>Cancel</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Center>
-      
     </Box>
   );
-
 };
 
 export default DoctorDashboard;

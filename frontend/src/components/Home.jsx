@@ -124,6 +124,9 @@ const Home = () => {
           </chakra.div>
         </Container>
       </Box>
+      <Box style={{height:"52px"}}>
+
+      </Box>
     </Box>
   );
 };

@@ -13,6 +13,7 @@ import {
   useToast,
   Heading,
 } from '@chakra-ui/react';
+import { formatDateTime } from './DoctorDashboard';
 
 const Booking = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +22,7 @@ const Booking = () => {
 
   useEffect(() => {
     // Make a GET request to fetch booked data
-    axios.get('http://localhost:8080/api/booked-data')
+    axios.get('https://infytabs.onrender.com/api/booked-data')
       .then((response) => {
         setBookings(response.data);
       })
@@ -35,7 +36,7 @@ const Booking = () => {
 
   const handleCancelBooking = (bookingId) => {
     // Make a DELETE request to cancel the booking
-    axios.delete(`http://localhost:8080/api/booked-data/${bookingId}`)
+    axios.delete(`https://infytabs.onrender.com/api/booked-data/${bookingId}`)
       .then((response) => {
         if (response.status === 200) {
           // Successfully canceled the booking
@@ -94,7 +95,7 @@ const Booking = () => {
           <Tbody>
             {bookings.map((booking) => (
               <Tr key={booking._id}>
-                <Td>{booking.date}</Td>
+                <Td>{formatDateTime(booking.date)}</Td>
                 <Td>{booking.doctorFullName}</Td>
                 <Td>{booking.doctorEmail}</Td>
                 <Td>{booking.doctorGender}</Td>
